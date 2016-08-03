@@ -738,7 +738,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
                 sbufWriteU8(dst, i + 1);
             break;
 
-#ifdef GPS
+#ifdef GPS2
         case MSP_RAW_GPS:
             sbufWriteU8(dst, STATE(GPS_FIX));
             sbufWriteU8(dst, GPS_numSat);
@@ -1263,7 +1263,7 @@ int mspServerCommandHandler(mspPacket_t *cmd, mspPacket_t *reply)
             break;
 #endif
 
-#ifdef GPS
+#ifdef GPS2
         case MSP_SET_RAW_GPS:
             if (sbufReadU8(src)) {
                 ENABLE_STATE(GPS_FIX);

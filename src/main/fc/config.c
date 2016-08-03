@@ -158,7 +158,7 @@ static void activateConfig(void)
 
     pidSetController(pidProfile()->pidController);
 
-#ifdef GPS
+#ifdef GPS2
     gpsUsePIDs(pidProfile());
 #endif
 

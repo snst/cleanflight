@@ -204,7 +204,7 @@ void processRcStickPositions(rxConfig_t *rxConfig, throttleStatus_e throttleStat
         // GYRO calibration
         gyroSetCalibrationCycles(CALIBRATING_GYRO_CYCLES);
 
-#ifdef GPS
+#ifdef GPS2
         if (feature(FEATURE_GPS)) {
             GPS_reset_home_position();
         }

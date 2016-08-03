@@ -71,7 +71,6 @@ void taskProcessGPS(void);
 void taskUpdateCompass(void);
 void taskUpdateBaro(void);
 void taskUpdateSonar(void);
-void taskCalculateAltitude(void);
 void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);

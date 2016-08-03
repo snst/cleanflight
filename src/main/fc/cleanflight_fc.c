@@ -582,7 +582,7 @@ void processRx(void)
     }
 #endif
 
-#ifdef GPS
+#ifdef GPS2
     if (sensors(SENSOR_GPS)) {
         updateGpsWaypointsAndMode();
     }
@@ -667,6 +667,9 @@ void taskMainPidLoop(void)
 
     updateRcCommands(); // this must be called here since applyAltHold directly manipulates rcCommands[]
 
+#if defined(NAV)
+	updatePositionEstimator();
+#endif
     if (rxConfig()->rcSmoothing) {
         filterRc();
     }
@@ -718,7 +721,7 @@ void taskMainPidLoop(void)
         rcCommand[THROTTLE] += calculateThrottleAngleCorrection(throttleCorrectionConfig()->throttle_correction_value);
     }
 
-#ifdef GPS
+#ifdef GPS2
     if (sensors(SENSOR_GPS)) {
         if ((FLIGHT_MODE(GPS_HOME_MODE) || FLIGHT_MODE(GPS_HOLD_MODE)) && STATE(GPS_FIX_HOME)) {
             updateGpsStateForHomeAndHoldMode();
@@ -846,24 +849,6 @@ void taskUpdateRxMain(void)
     updateLEDs();
 
     isRXDataNew = true;
-
-#ifdef BARO
-    // updateRcCommands() sets rcCommand[], updateAltHoldState depends on valid rcCommand[] data.
-    if (haveUpdatedRcCommandsOnce) {
-        if (sensors(SENSOR_BARO)) {
-            updateAltHoldState();
-        }
-    }
-#endif
-
-#ifdef SONAR
-    // updateRcCommands() sets rcCommand[], updateAltHoldState depends on valid rcCommand[] data.
-    if (haveUpdatedRcCommandsOnce) {
-        if (sensors(SENSOR_SONAR)) {
-            updateSonarAltHoldState();
-        }
-    }
-#endif
 }
 
 #ifdef GPS
@@ -907,22 +892,9 @@ void taskUpdateSonar(void)
     if (sensors(SENSOR_SONAR)) {
         sonarUpdate();
     }
-}
-#endif
 
-#if defined(BARO) || defined(SONAR)
-void taskCalculateAltitude(void)
-{
-    if (false
-#if defined(BARO)
-        || (sensors(SENSOR_BARO) && isBaroReady())
-#endif
-#if defined(SONAR)
-        || sensors(SENSOR_SONAR)
-#endif
-        ) {
-        calculateEstimatedAltitude(currentTime);
-    }}
+    updatePositionEstimator_SonarTopic(currentTime);
+}
 #endif
 
 #ifdef DISPLAY

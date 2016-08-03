@@ -17,17 +17,17 @@
 
 #pragma once
 
+#include "drivers/sensor.h"
+#include "drivers/accgyro.h"
+#include "sensors/acceleration.h"
+#include "common/maths.h"
+
+#define GRAVITY_CMSS    980.665f
+
 extern int16_t throttleAngleCorrection;
-extern uint32_t accTimeSum;
-extern int accSumCount;
 extern float accVelScale;
 extern int16_t accSmooth[XYZ_AXIS_COUNT];
-extern int32_t accSum[XYZ_AXIS_COUNT];
-
-#define DEGREES_TO_DECIDEGREES(angle) (angle * 10)
-#define DECIDEGREES_TO_DEGREES(angle) (angle / 10)
-#define DECIDEGREES_TO_RADIANS(angle) ((angle / 10.0f) * 0.0174532925f)
-#define DEGREES_TO_RADIANS(angle) ((angle) * 0.0174532925f)
+extern t_fp_vector imuAccelInBodyFrame;
 
 typedef union {
     int16_t raw[XYZ_AXIS_COUNT];
@@ -83,10 +83,14 @@ void imuUpdateGyroAndAttitude(void);
 float calculateThrottleAngleScale(uint16_t throttle_correction_angle);
 int16_t calculateThrottleAngleCorrection(uint8_t throttle_correction_value);
 float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff);
+bool isImuReady(void);
+bool isImuHeadingValid(void);
 
+void imuTransformVectorBodyToEarth(t_fp_vector * v);
+void imuTransformVectorEarthToBody(t_fp_vector * v);
 int16_t imuCalculateHeading(t_fp_vector *vec);
 
-float getCosTiltAngle(void);
+float calculateCosTiltAngle(void);
 
 void imuResetAccelerationSum(void);
 

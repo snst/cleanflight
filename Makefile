@@ -327,7 +327,8 @@ OSD_COMMON_SRC = \
 
 HIGHEND_SRC = \
 		   flight/gtune.c \
-		   flight/navigation.c \
+		   flight/navigation_rewrite_pos_estimator.c \
+		   flight/navigation_rewrite.c \
 		   flight/gps_conversion.c \
 		   common/colorconversion.c \
 		   io/gps.c \

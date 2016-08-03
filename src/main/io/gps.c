@@ -426,7 +426,7 @@ static void gpsNewData(uint16_t c)
     debug[3] = GPS_update;
 #endif
 
-    onGpsNewData();
+    onNewGPSData();
 }
 
 bool gpsNewFrame(uint8_t c)

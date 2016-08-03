@@ -118,7 +118,7 @@
 #define LED0
 #define LED1
 #define INVERTER
-#define DISPLAY
+//#define DISPLAY
 
 #define SONAR
 #define SONAR_PWM_TRIGGER_PIN       Pin_8   // PWM5 (PB8) - 5v tolerant
@@ -197,15 +197,16 @@
 #define ADC_EXTERNAL    ADC_CHANNEL3
 
 
-#define LED_STRIP
+//#define LED_STRIP
 #define LED_STRIP_TIMER TIM3
 #define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
 #define WS2811_DMA_HANDLER_IDENTIFER DMA1Channel6Descriptor
 
 #define GPS
 #define GTUNE
-#define BLACKBOX
-#define TELEMETRY
+#define NAV
+//#define BLACKBOX
+//#define TELEMETRY
 #define SERIAL_RX
 #define USE_SERVOS
 #define USE_CLI

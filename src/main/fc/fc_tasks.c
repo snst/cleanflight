@@ -124,15 +124,6 @@ cfTask_t cfTasks[] = {
     },
 #endif
 
-#if defined(BARO) || defined(SONAR)
-    [TASK_ALTITUDE] = {
-        .taskName = "ALTITUDE",
-        .taskFunc = taskCalculateAltitude,
-        .desiredPeriod = 1000000 / 40,          // 40 Hz, every 25 ms
-        .staticPriority = TASK_PRIORITY_MEDIUM,
-    },
-#endif
-
 #ifdef TRANSPONDER
     [TASK_TRANSPONDER] = {
         .taskName = "TRANSPONDER",

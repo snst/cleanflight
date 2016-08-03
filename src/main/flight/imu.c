@@ -63,16 +63,14 @@
 #define SPIN_RATE_LIMIT 20
 
 int16_t accSmooth[XYZ_AXIS_COUNT];
-int32_t accSum[XYZ_AXIS_COUNT];
 
-uint32_t accTimeSum = 0;        // keep track for integration of acc
-int accSumCount = 0;
 float accVelScale;
 
 float throttleAngleScale;
 float fc_acc;
 float smallAngleCosZ = 0;
-
+t_fp_vector imuAccelInBodyFrame;
+t_fp_vector imuMeasuredGravityBF;
 static bool isAccelUpdatedAtLeastOnce = false;
 
 static imuRuntimeConfig_t *imuRuntimeConfig;
@@ -147,6 +145,10 @@ void imuInit(void)
     gyroScale = gyro.scale * (M_PIf / 180.0f);  // gyro output scaled to rad per second
     accVelScale = 9.80665f / acc.acc_1G / 10000.0f;
 
+    for (int axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        imuAccelInBodyFrame.A[axis] = 0;
+    }
+	
     imuComputeRotationMatrix();
 }
 
@@ -163,14 +165,6 @@ float calculateAccZLowPassFilterRCTimeConstant(float accz_lpf_cutoff)
     return 0.5f / (M_PIf * accz_lpf_cutoff);
 }
 
-void imuResetAccelerationSum(void)
-{
-    accSum[0] = 0;
-    accSum[1] = 0;
-    accSum[2] = 0;
-    accSumCount = 0;
-    accTimeSum = 0;
-}
 
 void imuTransformVectorBodyToEarth(t_fp_vector * v)
 {
@@ -186,44 +180,21 @@ void imuTransformVectorBodyToEarth(t_fp_vector * v)
     v->V.Z = z;
 }
 
-// rotate acc into Earth frame and calculate acceleration in it
-void imuCalculateAcceleration(uint32_t deltaT)
+void imuTransformVectorEarthToBody(t_fp_vector * v)
 {
-    static int32_t accZoffset = 0;
-    static float accz_smooth = 0;
-    float dT;
-    t_fp_vector accel_ned;
+    float x,y,z;
 
-    // deltaT is measured in us ticks
-    dT = (float)deltaT * 1e-6f;
+    v->V.Y = -v->V.Y;
 
-    accel_ned.V.X = accSmooth[0];
-    accel_ned.V.Y = accSmooth[1];
-    accel_ned.V.Z = accSmooth[2];
+    /* From earth frame to body frame */
+    x = rMat[0][0] * v->V.X + rMat[1][0] * v->V.Y + rMat[2][0] * v->V.Z;
+    y = rMat[0][1] * v->V.X + rMat[1][1] * v->V.Y + rMat[2][1] * v->V.Z;
+    z = rMat[0][2] * v->V.X + rMat[1][2] * v->V.Y + rMat[2][2] * v->V.Z;
 
-    imuTransformVectorBodyToEarth(&accel_ned);
-
-    if (imuRuntimeConfig->acc_unarmedcal == 1) {
-        if (!ARMING_FLAG(ARMED)) {
-            accZoffset -= accZoffset / 64;
-            accZoffset += accel_ned.V.Z;
-        }
-        accel_ned.V.Z -= accZoffset / 64;  // compensate for gravitation on z-axis
-    } else
-        accel_ned.V.Z -= acc.acc_1G;
-
-    accz_smooth = accz_smooth + (dT / (fc_acc + dT)) * (accel_ned.V.Z - accz_smooth); // low pass filter
-
-    // apply Deadband to reduce integration drift and vibration influence
-    accSum[X] += applyDeadband(lrintf(accel_ned.V.X), accDeadband->xy);
-    accSum[Y] += applyDeadband(lrintf(accel_ned.V.Y), accDeadband->xy);
-    accSum[Z] += applyDeadband(lrintf(accz_smooth), accDeadband->z);
-
-    // sum up Values for later integration to get velocity and distance
-    accTimeSum += deltaT;
-    accSumCount++;
+    v->V.X = x;
+    v->V.Y = y;
+    v->V.Z = z;
 }
-
 static float invSqrt(float x)
 {
     return 1.0f / sqrtf(x);
@@ -452,10 +423,19 @@ static void imuCalculateEstimatedAttitude(void)
                         useYaw, rawYawError);
 
     imuUpdateEulerAngles();
-
-    imuCalculateAcceleration(deltaT); // rotate acc vector into earth frame
 }
 
+/* Calculate measured acceleration in body frame cm/s/s */
+static void imuUpdateMeasuredAcceleration(void)
+{
+    int axis;
+
+    /* Convert acceleration to cm/s/s */
+    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
+        imuAccelInBodyFrame.A[axis] = accADC[axis] * (GRAVITY_CMSS / acc.acc_1G);
+        imuMeasuredGravityBF.A[axis] = imuAccelInBodyFrame.A[axis];
+    }
+}
 void imuUpdateAccelerometer(rollAndPitchTrims_t *accelerometerTrims)
 {
     if (sensors(SENSOR_ACC)) {
@@ -469,6 +449,7 @@ void imuUpdateGyroAndAttitude(void)
     gyroUpdate();
 
     if (sensors(SENSOR_ACC) && isAccelUpdatedAtLeastOnce) {
+        imuUpdateMeasuredAcceleration();  // Calculate accel in body frame in cm/s/s
         imuCalculateEstimatedAttitude();
     } else {
         accADC[X] = 0;
@@ -477,7 +458,15 @@ void imuUpdateGyroAndAttitude(void)
     }
 }
 
-float getCosTiltAngle(void)
+bool isImuReady(void)
+{
+    return sensors(SENSOR_ACC) && isGyroCalibrationComplete();
+}
+bool isImuHeadingValid(void)
+{
+    return (sensors(SENSOR_MAG));// && persistentFlag(FLAG_MAG_CALIBRATION_DONE));
+}
+float calculateCosTiltAngle(void)
 {
     return rMat[2][2];
 }
