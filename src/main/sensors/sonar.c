@@ -28,8 +28,13 @@
 #include "config/parameter_group.h"
 #include "config/feature.h"
 
+#ifdef SONAR_ONBAORD
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/gpio.h"
+#endif
+#ifdef SONAR_I2C
+# include "drivers/sonar_i2c.h"
+#endif
 
 #include "fc/rc_controls.h"
 #include "fc/runtime_config.h"
@@ -44,7 +49,6 @@
     float baro_cf_vel;                      // apply Complimentary Filter to keep the calculated velocity based on baro velocity (i.e. near real velocity)
     float baro_cf_alt;                      // apply CF to use ACC for height estimation
 
-#ifdef SONAR
 int16_t sonarMaxRangeCm;
 int16_t sonarMaxAltWithTiltCm;
 int16_t sonarCfAltCm; // Complimentary Filter altitude
@@ -52,6 +56,8 @@ STATIC_UNIT_TESTED int16_t sonarMaxTiltDeciDegrees;
 float sonarMaxTiltCos;
 
 static int32_t calculatedAltitude;
+
+#ifdef SONAR_ONBOARD
 
 const sonarHardware_t *sonarGetHardwareConfiguration(currentSensor_e  currentMeterType)
 {
@@ -137,9 +143,38 @@ static int32_t applySonarMedianFilter(int32_t newSonarReading)
         return newSonarReading;
 }
 
+#endif
+
+
+#ifdef SONAR_I2C
+
+void sonarInit()
+{
+    sonarRange_t sonarRange;
+    sonar_i2c_init(&sonarRange);
+	if(i2cSonarModuleDetect())
+	{
+		sensorsSet(SENSOR_SONAR);
+	}
+    sonarMaxRangeCm = sonarRange.maxRangeCm;
+    sonarCfAltCm = sonarMaxRangeCm / 2;
+    sonarMaxTiltDeciDegrees =  sonarRange.detectionConeExtendedDeciDegrees / 2;
+    sonarMaxTiltCos = cos_approx(sonarMaxTiltDeciDegrees / 10.0f * RAD);
+    sonarMaxAltWithTiltCm = sonarMaxRangeCm * sonarMaxTiltCos;
+    calculatedAltitude = SONAR_OUT_OF_RANGE;
+}
+
+#endif
+
 void sonarUpdate(void)
 {
+#ifdef SONAR_I2C
+    sonar_i2c_start_reading();
+	//debug[3]++;
+#endif
+#ifdef SONAR_ONBOARD
     hcsr04_start_reading();
+#endif
 }
 
 /**
@@ -147,11 +182,20 @@ void sonarUpdate(void)
  */
 int32_t sonarRead(void)
 {
+#ifdef SONAR_I2C
+//debug[2]++;
+int32_t val = sonar_i2c_get_distance();
+//debug[1] = val;
+    return val;
+#endif
+#ifdef SONAR_ONBOARD
     int32_t distance = hcsr04_get_distance();
     if (distance > HCSR04_MAX_RANGE_CM)
         distance = SONAR_OUT_OF_RANGE;
 
     return applySonarMedianFilter(distance);
+#endif
+return 0;
 }
 
 /**
@@ -180,4 +224,4 @@ int32_t sonarGetLatestAltitude(void)
     return calculatedAltitude;
 }
 
-#endif
+

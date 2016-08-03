@@ -337,7 +337,7 @@ void init(void)
 
     memset(&pwm_params, 0, sizeof(pwm_params));
 
-#ifdef SONAR
+#ifdef SONAR_ONBOARD
     const sonarHardware_t *sonarHardware = NULL;
 
     if (feature(FEATURE_SONAR)) {
@@ -566,7 +566,12 @@ void init(void)
 
 #ifdef SONAR
     if (feature(FEATURE_SONAR)) {
+# ifdef SONAR_ONBOARD
         sonarInit(sonarHardware);
+# endif
+# ifdef SONAR_I2C
+        sonarInit(NULL);
+# endif
     }
 #endif
 

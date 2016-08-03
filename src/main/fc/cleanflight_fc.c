@@ -893,7 +893,7 @@ void taskUpdateSonar(void)
         sonarUpdate();
     }
 
-    updatePositionEstimator_SonarTopic(currentTime);
+    //updatePositionEstimator_SonarTopic(currentTime);
 }
 #endif
 

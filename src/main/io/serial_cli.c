@@ -2002,7 +2002,7 @@ static void cliGpsPassthrough(char *cmdline)
 {
     UNUSED(cmdline);
 
-    gpsEnablePassthrough(cliPort);
+//    gpsEnablePassthrough(cliPort);
 }
 #endif
 

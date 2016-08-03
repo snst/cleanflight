@@ -286,6 +286,7 @@ FC_COMMON_SRC = \
 		   drivers/bus_i2c_soft.c \
 		   drivers/sound_beeper.c \
 		   drivers/gyro_sync.c \
+		   drivers/gps_i2cnav.c \
 		   io/beeper.c \
 		   io/gimbal.c \
 		   io/motor_and_servo.c \
@@ -389,6 +390,7 @@ NAZE_SRC = \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f10x.c \
 		   drivers/sonar_hcsr04.c \
+		   drivers/sonar_i2c.c \
 		   drivers/pwm_mapping.c \
 		   drivers/pwm_output.c \
 		   drivers/pwm_rx.c \
